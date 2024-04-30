@@ -2,6 +2,7 @@
 
 A simpler daily notes, monthly notes, and yearly notes plugin. Better Periodic Notes uses **folder notes** to structure to hierarchically organize periodic notes:
 
+```
 2024
 ├── 2024.md
 ├── 2024-01
@@ -15,7 +16,7 @@ A simpler daily notes, monthly notes, and yearly notes plugin. Better Periodic N
 │   ├── 2024-02-02.md
 │   └── ...
 └── ...
-
+```
 
 ### commands
 1. Create today's daily note
