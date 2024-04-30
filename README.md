@@ -28,4 +28,4 @@ A simpler, better periodic notes plugin that includes daily notes, monthly notes
 
 
 ### Settings
-None
+1. Specify the "Note Folder" - ie, where the periodic notes will be created
