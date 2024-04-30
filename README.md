@@ -18,10 +18,14 @@ A simpler, better periodic notes plugin that includes daily notes, monthly notes
 └── ...
 ```
 
-### commands
+### Commands
 1. Create today's daily note
   a. Automatically creates the monthly and yearly note also, if none exists.
 2. Create monthly note
   a. User enters the month to create
 3. Create yearly note
   a. User enters the year to create
+
+
+### Settings
+None
