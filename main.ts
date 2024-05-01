@@ -28,7 +28,7 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 
 		this.addCommand({
 			id: "open-monthly-note",
-			name: "Open monthly",
+			name: "Open monthly note",
 			callback: () => this.createOrOpenPeriodicNote(PeriodType.Monthly),
 		});
 

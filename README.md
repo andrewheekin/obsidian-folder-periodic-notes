@@ -19,11 +19,11 @@ A simpler, better periodic notes plugin that includes daily notes, monthly notes
 ```
 
 ### Commands
-1. Create today's daily note
+1. Open daily note
     - Automatically creates the monthly and yearly note also, if none exists.
-2. Create monthly note
+2. Open monthly note
     - User enters the month to create
-3. Create yearly note
+3. Open yearly note
     - User enters the year to create
 
 
