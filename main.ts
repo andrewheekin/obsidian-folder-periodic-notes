@@ -1,4 +1,4 @@
-import { Plugin, Notice, TFile, TFolder, moment, Setting, App, PluginSettingTab } from "obsidian";
+import { Plugin, TFile, TFolder, moment, Setting, App, PluginSettingTab } from "obsidian";
 
 interface BetterPeriodicNotesSettings {
 	noteFolder: string;
@@ -51,6 +51,26 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+
+	/**
+	 * Ensure that all the folders and folder notes in the path exist
+	 *
+	 * Example 1, "Periodic Notes/2024/2024-01/2024-01-01" will create:
+	 * - Periodic Notes/2024/2024.md
+	 * - Periodic Notes/2024/2024-01/2024-01.md
+	 * - Periodic Notes/2024/2024-01/2024-01-01.md
+	 * Then will open the note Periodic Notes/2024/2024-01/2024-01-01.md
+	 *
+	 * Example 2, "Periodic Notes/2024/2024-01" will create:
+	 * - Periodic Notes/2024/2024.md
+	 * - Periodic Notes/2024/2024-01/2024-01.md
+	 * Then will open the note Periodic Notes/2024/2024-01/2024-01.md
+	 *
+	 * Example 3, "Periodic Notes/2024" will create:
+	 * - Periodic Notes/2024/2024.md
+	 * Then will open the note Periodic Notes/2024/2024.md
+	 */
+
 	async createOrOpenPeriodicNote(periodType: PeriodType) {
 		const date = moment();
 		const year = date.format("YYYY");
@@ -58,66 +78,79 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 		const day = date.format("YYYY-MM-DD");
 
 		let noteFolderPath = this.settings.noteFolder;
+
+		if (periodType === PeriodType.Yearly) {
+			await this.createYearFolderNote(year);
+			return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${year}.md`, "", true);
+		}
+
+		if (periodType === PeriodType.Monthly) {
+			await this.createYearFolderNote(year);
+			await this.createMonthFolderNote(year, month);
+			return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${month}.md`, "", true);
+		}
+
 		if (periodType === PeriodType.Daily) {
-			await this.getOrCreateNotesAndFolders(`${noteFolderPath}/${year}/${month}/${day}`, true);
-		} else if (periodType === PeriodType.Monthly) {
-			await this.getOrCreateNotesAndFolders(`${noteFolderPath}/${year}/${month}`, false);
-		} else if (periodType === PeriodType.Yearly) {
-			await this.getOrCreateNotesAndFolders(`${noteFolderPath}/${year}`, false);
+			await this.createYearFolderNote(year);
+			await this.createMonthFolderNote(year, month);
+			await this.createDayNote(year, month, day);
+			return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${day}.md`, "", true);
+		}
+
+	}
+
+	async createYearFolderNote(year: string) {
+		const yearFolderPath = `${this.settings.noteFolder}/${year}`;
+		const yearFilePath = `${yearFolderPath}/${year}.md`;
+
+		// Check whether the year folder exists, if not create it
+		let existingYearFolder = this.app.vault.getAbstractFileByPath(yearFolderPath);
+		if (!existingYearFolder) {
+			await this.app.vault.createFolder(yearFolderPath);
+		}
+
+		// Check whether the year note exists, if not create it
+		let existingYearFile = this.app.vault.getAbstractFileByPath(yearFilePath);
+		if (!existingYearFile) {
+			// Second parameter is the content of the note
+			await this.app.vault.create(yearFilePath, "");
 		}
 	}
 
-	/**
-	 * Take the path and ensure that all the folders and folder notes in the path exist
-	 *
-	 * @param path
-	 * @param isDay - if isDay is true, create a note (not a folder note) for the day component of the path
-	 */
-	async getOrCreateNotesAndFolders(path: string, isDay: boolean) {
-		// Create an array of folders from the path
-		const folders = path.split("/");
+	async createMonthFolderNote(year: string, month: string) {
+		const monthFolderPath = `${this.settings.noteFolder}/${year}/${month}`;
+		const monthFilePath = `${monthFolderPath}/${month}.md`;
 
-		// Remove the root folder (noteFolder in settings)
-		const periodicFolders = folders.slice(1);
-
-		// Set the current path to the noteFolder
-		let currentPath = folders[0];
-
-		// Store the last note created
-		let lastCreatedNote: TFile | null = null;
-
-		// Loop through the year/month/day folders and create them and the corresponding markdown note of the same name if they don't exist
-		for (const folder of periodicFolders) {
-			if (folder) {
-				currentPath += `/${folder}`;
-
-				// AbstractFile can be either a TFile or TFolder
-				const folderExists = this.app.vault.getAbstractFileByPath(currentPath);
-
-				// If the folder doesn't exist, create it and create a markdown note with the same name inside
-				if (!folderExists) {
-					await this.app.vault.createFolder(currentPath);
-					lastCreatedNote = await this.app.vault.create(`${currentPath}/${folder}.md`, "");
-				}
-				// If the folder exists, but it's a TFile, throw an error
-				else if (folderExists instanceof TFile) {
-					throw new Error(`A file with the name ${folder} already exists at ${currentPath}`);
-				}
-				// If the folder exists, but the markdown note doesn't exist, create it
-				else if (folderExists instanceof TFolder) {
-					// Include the extension in the path, since getAbstractFileByPath will also return folders of the same name
-					const noteExists = this.app.vault.getAbstractFileByPath(`${currentPath}/${folder}.md`);
-					if (!noteExists) {
-						lastCreatedNote = await this.app.vault.create(`${currentPath}/${folder}.md`, "");
-					}
-				}
-			}
+		// Check whether the month folder exists, if not create it
+		let existingMonthFolder = this.app.vault.getAbstractFileByPath(monthFolderPath);
+		if (!existingMonthFolder) {
+			await this.app.vault.createFolder(monthFolderPath);
 		}
 
-		// Open the note if it was created
-		if (lastCreatedNote) {
-			this.app.workspace.openLinkText(lastCreatedNote.path, "", true);
-			new Notice(`Opened ${currentPath}`);
+		// Check whether the month note exists, if not create it
+		let existingMonthFile = this.app.vault.getAbstractFileByPath(monthFilePath);
+		if (!existingMonthFile) {
+			// Second parameter is the content of the note
+			await this.app.vault.create(monthFilePath, "");
+		}
+	}
+
+	async createDayNote(year: string, month: string, day: string) {
+		// Only create the note, not the folder
+		const dayFolderPath = `${this.settings.noteFolder}/${year}/${month}`;
+		const dayFilePath = `${dayFolderPath}/${day}.md`;
+
+		// Check whether the month folder folder exists for the day, if not create it
+		let existingMonthFolder = this.app.vault.getAbstractFileByPath(dayFolderPath);
+		if (!existingMonthFolder) {
+			await this.app.vault.createFolder(dayFolderPath);
+		}
+
+		// Check whether the day note exists, if not create it
+		let existingDayFile = this.app.vault.getAbstractFileByPath(dayFilePath);
+		if (!existingDayFile) {
+			// Second parameter is the content of the note
+			await this.app.vault.create(dayFilePath, "");
 		}
 	}
 }
