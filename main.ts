@@ -1,12 +1,4 @@
-import {
-	Plugin,
-	Notice,
-	TFile,
-	moment,
-	Setting,
-	App,
-	PluginSettingTab,
-} from "obsidian";
+import { Plugin, Notice, TFile, TFolder, moment, Setting, App, PluginSettingTab } from "obsidian";
 
 interface BetterPeriodicNotesSettings {
 	noteFolder: string;
@@ -17,9 +9,9 @@ const DEFAULT_SETTINGS: BetterPeriodicNotesSettings = {
 };
 
 enum PeriodType {
-  Daily = 'daily',
-  Monthly = 'monthly',
-  Yearly = 'yearly',
+	Daily = "daily",
+	Monthly = "monthly",
+	Yearly = "yearly",
 }
 
 export default class BetterPeriodicNotesPlugin extends Plugin {
@@ -29,21 +21,21 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addCommand({
-			id: "create-daily-note",
-			name: "Create today's daily note",
-			callback: () => this.createPeriodicNote(PeriodType.Daily),
+			id: "open-daily-note",
+			name: "Open daily note",
+			callback: () => this.createOrOpenPeriodicNote(PeriodType.Daily),
 		});
 
 		this.addCommand({
-			id: "create-monthly-note",
-			name: "Create this month's note",
-			callback: () => this.createPeriodicNote(PeriodType.Monthly),
+			id: "open-monthly-note",
+			name: "Open monthly",
+			callback: () => this.createOrOpenPeriodicNote(PeriodType.Monthly),
 		});
 
 		this.addCommand({
-			id: "create-yearly-note",
-			name: "Create this year's note",
-			callback: () => this.createPeriodicNote(PeriodType.Yearly),
+			id: "open-yearly-note",
+			name: "Open yearly note",
+			callback: () => this.createOrOpenPeriodicNote(PeriodType.Yearly),
 		});
 
 		this.addSettingTab(new BetterPeriodicNotesSettingTab(this.app, this));
@@ -52,62 +44,81 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 	onunload() {}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
 
-	async createPeriodicNote(periodType: PeriodType) {
+	async createOrOpenPeriodicNote(periodType: PeriodType) {
 		const date = moment();
 		const year = date.format("YYYY");
 		const month = date.format("YYYY-MM");
 		const day = date.format("YYYY-MM-DD");
 
-		let path = this.settings.noteFolder;
-		if (periodType === PeriodType.Daily || periodType === PeriodType.Monthly) {
-			path += `/${year}/${month}`;
-			await this.ensureFolderExists(path);
-			if (periodType === PeriodType.Daily) {
-				path += `/${day}.md`;
-			} else {
-				path += `/${month}.md`;
-			}
+		let noteFolderPath = this.settings.noteFolder;
+		if (periodType === PeriodType.Daily) {
+			await this.getOrCreateNotesAndFolders(`${noteFolderPath}/${year}/${month}/${day}`, true);
+		} else if (periodType === PeriodType.Monthly) {
+			await this.getOrCreateNotesAndFolders(`${noteFolderPath}/${year}/${month}`, false);
 		} else if (periodType === PeriodType.Yearly) {
-			path += `/${year}`;
-			await this.ensureFolderExists(path);
-			path += `/${year}.md`;
+			await this.getOrCreateNotesAndFolders(`${noteFolderPath}/${year}`, false);
 		}
-
-		this.createOrShowNote(path);
 	}
 
-	async ensureFolderExists(path: string) {
+	/**
+	 * Take the path and ensure that all the folders and folder notes in the path exist
+	 *
+	 * @param path
+	 * @param isDay - if isDay is true, create a note (not a folder note) for the day component of the path
+	 */
+	async getOrCreateNotesAndFolders(path: string, isDay: boolean) {
+		// Create an array of folders from the path
 		const folders = path.split("/");
-		let currentPath = "";
-		for (const folder of folders) {
+
+		// Remove the root folder (noteFolder in settings)
+		const periodicFolders = folders.slice(1);
+
+		// Set the current path to the noteFolder
+		let currentPath = folders[0];
+
+		// Store the last note created
+		let lastCreatedNote: TFile | null = null;
+
+		// Loop through the year/month/day folders and create them and the corresponding markdown note of the same name if they don't exist
+		for (const folder of periodicFolders) {
 			if (folder) {
 				currentPath += `/${folder}`;
-				const exist = this.app.vault.getAbstractFileByPath(currentPath);
-				if (!exist) {
+
+				// AbstractFile can be either a TFile or TFolder
+				const folderExists = this.app.vault.getAbstractFileByPath(currentPath);
+
+				// If the folder doesn't exist, create it and create a markdown note with the same name inside
+				if (!folderExists) {
 					await this.app.vault.createFolder(currentPath);
+					lastCreatedNote = await this.app.vault.create(`${currentPath}/${folder}.md`, "");
+				}
+				// If the folder exists, but it's a TFile, throw an error
+				else if (folderExists instanceof TFile) {
+					throw new Error(`A file with the name ${folder} already exists at ${currentPath}`);
+				}
+				// If the folder exists, but the markdown note doesn't exist, create it
+				else if (folderExists instanceof TFolder) {
+					// Include the extension in the path, since getAbstractFileByPath will also return folders of the same name
+					const noteExists = this.app.vault.getAbstractFileByPath(`${currentPath}/${folder}.md`);
+					if (!noteExists) {
+						lastCreatedNote = await this.app.vault.create(`${currentPath}/${folder}.md`, "");
+					}
 				}
 			}
 		}
-	}
 
-	async createOrShowNote(path: string) {
-		let file = this.app.vault.getAbstractFileByPath(path) as TFile;
-		if (!file) {
-			file = await this.app.vault.create(path, "");
+		// Open the note if it was created
+		if (lastCreatedNote) {
+			this.app.workspace.openLinkText(lastCreatedNote.path, "", true);
+			new Notice(`Opened ${currentPath}`);
 		}
-		this.app.workspace.openLinkText(file.path, "/", false);
-		new Notice(`Note ${file.basename} is opened.`);
 	}
 }
 
@@ -130,9 +141,7 @@ class BetterPeriodicNotesSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Note Folder")
-			.setDesc(
-				"Specify the folder where the periodic notes will be created"
-			)
+			.setDesc("Specify the folder where the periodic notes will be created")
 			.addText((text) =>
 				text
 					.setPlaceholder("/")
