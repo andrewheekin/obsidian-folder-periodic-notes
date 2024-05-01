@@ -1,5 +1,7 @@
 {
 	"name": "obsidian-better-periodic-notes",
+	"version": "1.0.0",
+	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
