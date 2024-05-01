@@ -16,6 +16,12 @@ const DEFAULT_SETTINGS: BetterPeriodicNotesSettings = {
 	noteFolder: "/",
 };
 
+enum PeriodType {
+  Daily = 'daily',
+  Monthly = 'monthly',
+  Yearly = 'yearly',
+}
+
 export default class BetterPeriodicNotesPlugin extends Plugin {
 	settings: BetterPeriodicNotesSettings;
 
@@ -25,19 +31,19 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 		this.addCommand({
 			id: "create-daily-note",
 			name: "Create today's daily note",
-			callback: () => this.createPeriodicNote("daily"),
+			callback: () => this.createPeriodicNote(PeriodType.Daily),
 		});
 
 		this.addCommand({
 			id: "create-monthly-note",
 			name: "Create this month's note",
-			callback: () => this.createPeriodicNote("monthly"),
+			callback: () => this.createPeriodicNote(PeriodType.Monthly),
 		});
 
 		this.addCommand({
 			id: "create-yearly-note",
 			name: "Create this year's note",
-			callback: () => this.createPeriodicNote("yearly"),
+			callback: () => this.createPeriodicNote(PeriodType.Yearly),
 		});
 
 		this.addSettingTab(new BetterPeriodicNotesSettingTab(this.app, this));
@@ -57,22 +63,22 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	async createPeriodicNote(periodType: "daily" | "monthly" | "yearly") {
+	async createPeriodicNote(periodType: PeriodType) {
 		const date = moment();
 		const year = date.format("YYYY");
 		const month = date.format("YYYY-MM");
 		const day = date.format("YYYY-MM-DD");
 
 		let path = this.settings.noteFolder;
-		if (periodType === "daily" || periodType === "monthly") {
+		if (periodType === PeriodType.Daily || periodType === PeriodType.Monthly) {
 			path += `/${year}/${month}`;
 			await this.ensureFolderExists(path);
-			if (periodType === "daily") {
+			if (periodType === PeriodType.Daily) {
 				path += `/${day}.md`;
 			} else {
 				path += `/${month}.md`;
 			}
-		} else if (periodType === "yearly") {
+		} else if (periodType === PeriodType.Yearly) {
 			path += `/${year}`;
 			await this.ensureFolderExists(path);
 			path += `/${year}.md`;
