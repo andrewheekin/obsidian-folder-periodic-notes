@@ -1,9 +1,9 @@
 {
-  "id": "better-periodic-notes",
-  "name": "Better Periodic Notes",
-  "version": "1.0.1",
+  "id": "folder-periodic-notes",
+  "name": "Folder Periodic Notes",
+  "version": "1.0.2",
 	"minAppVersion": "0.15.0",
-  "description": "Simpler, better periodic notes plugin that includes daily notes, monthly notes, and yearly notes.",
+  "description": "Periodic notes in a year, month, and day folder hierarchy.",
   "author": "Andrew Heekin",
 	"authorUrl": "https://andrewheekin.com/",
 	"fundingUrl": "https://www.buymeacoffee.com/drewheek",

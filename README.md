@@ -1,6 +1,7 @@
-# Obsidian Better Periodic Notes
+# Obsidian Folder Periodic Notes
 
-A simpler, better periodic notes plugin that includes daily notes, monthly notes, and yearly notes. Better Periodic Notes uses a hierarchical **folder notes** structure to organize periodic notes:
+Periodic notes in a year, month, and day folder hierarchy. Yearly notes folders contain monthly notes, and monthly notes folders contain daily notes.
+Uses a hierarchical **folder notes** structure to organize periodic notes:
 
 ```
 2024

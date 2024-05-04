@@ -1,10 +1,10 @@
 import { Plugin, TFile, TFolder, moment, Setting, App, PluginSettingTab } from "obsidian";
 
-interface BetterPeriodicNotesSettings {
+interface FolderPeriodicNotesSettings {
 	noteFolder: string;
 }
 
-const DEFAULT_SETTINGS: BetterPeriodicNotesSettings = {
+const DEFAULT_SETTINGS: FolderPeriodicNotesSettings = {
 	noteFolder: "/",
 };
 
@@ -14,8 +14,8 @@ enum PeriodType {
 	Yearly = "yearly",
 }
 
-export default class BetterPeriodicNotesPlugin extends Plugin {
-	settings: BetterPeriodicNotesSettings;
+export default class FolderPeriodicNotesPlugin extends Plugin {
+	settings: FolderPeriodicNotesSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -38,7 +38,7 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 			callback: () => this.createOrOpenPeriodicNote(PeriodType.Yearly),
 		});
 
-		this.addSettingTab(new BetterPeriodicNotesSettingTab(this.app, this));
+		this.addSettingTab(new FolderPeriodicNotesSettingTab(this.app, this));
 	}
 
 	onunload() {}
@@ -155,10 +155,10 @@ export default class BetterPeriodicNotesPlugin extends Plugin {
 	}
 }
 
-class BetterPeriodicNotesSettingTab extends PluginSettingTab {
-	plugin: BetterPeriodicNotesPlugin;
+class FolderPeriodicNotesSettingTab extends PluginSettingTab {
+	plugin: FolderPeriodicNotesPlugin;
 
-	constructor(app: App, plugin: BetterPeriodicNotesPlugin) {
+	constructor(app: App, plugin: FolderPeriodicNotesPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -168,13 +168,9 @@ class BetterPeriodicNotesSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", {
-			text: "Settings for Better Periodic Notes",
-		});
-
 		new Setting(containerEl)
-			.setName("Note Folder")
-			.setDesc("Specify the folder where the periodic notes will be created")
+			.setName("Note folder")
+			.setDesc("The folder where your periodic notes will be stored")
 			.addText((text) =>
 				text
 					.setPlaceholder("/")
