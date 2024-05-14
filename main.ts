@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS: FolderPeriodicNotesSettings = {
 
 enum PeriodType {
 	Daily = "daily",
+	Weekly = "weekly",
 	Monthly = "monthly",
 	Yearly = "yearly",
 }
@@ -24,6 +25,12 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 			id: "open-daily-note",
 			name: "Open daily note",
 			callback: () => this.createOrOpenPeriodicNote(PeriodType.Daily),
+		});
+
+		this.addCommand({
+			id: "open-weekly-note",
+			name: "Open weekly note",
+			callback: () => this.createOrOpenPeriodicNote(PeriodType.Weekly),
 		});
 
 		this.addCommand({
@@ -51,7 +58,6 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-
 	/**
 	 * Ensure that all the folders and folder notes in the path exist
 	 *
@@ -76,12 +82,22 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 		const year = date.format("YYYY");
 		const month = date.format("YYYY-MM");
 		const day = date.format("YYYY-MM-DD");
+		const week = date.format("YYYY-[W]WW"); // ISO Week Number
 
 		let noteFolderPath = this.settings.noteFolder;
 
 		if (periodType === PeriodType.Yearly) {
 			await this.createYearFolderNote(year);
 			return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${year}.md`, "", true);
+		}
+
+		if (periodType === PeriodType.Weekly) {
+			await this.createYearFolderNote(year);
+			const weekStart = moment().startOf("isoWeek");
+			const weekMonth = weekStart.format("YYYY-MM");
+			await this.createMonthFolderNote(year, weekMonth); // Ensure the month folder for the week's start month exists
+			await this.createWeekNote(year, weekMonth, week);
+			return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${weekMonth}/${week}.md`, "", true);
 		}
 
 		if (periodType === PeriodType.Monthly) {
@@ -96,7 +112,6 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 			await this.createDayNote(year, month, day);
 			return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${day}.md`, "", true);
 		}
-
 	}
 
 	async createYearFolderNote(year: string) {
@@ -132,6 +147,21 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 		if (!existingMonthFile) {
 			// Second parameter is the content of the note
 			await this.app.vault.create(monthFilePath, "");
+		}
+	}
+
+	async createWeekNote(year: string, month: string, week: string) {
+		const weekFolderPath = `${this.settings.noteFolder}/${year}/${month}`;
+		const weekFilePath = `${weekFolderPath}/${week}.md`;
+
+		let existingWeekFolder = this.app.vault.getAbstractFileByPath(weekFolderPath);
+		if (!existingWeekFolder) {
+			await this.app.vault.createFolder(weekFolderPath);
+		}
+
+		let existingWeekFile = this.app.vault.getAbstractFileByPath(weekFilePath);
+		if (!existingWeekFile) {
+			await this.app.vault.create(weekFilePath, ""); // Second parameter is the content of the note
 		}
 	}
 
