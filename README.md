@@ -1,6 +1,6 @@
 # Obsidian Folder Periodic Notes
 
-Periodic notes in a year, month, and day folder hierarchy. Yearly notes folders contain monthly notes, and monthly notes folders contain daily notes.
+Periodic notes in a year, month, and day folder hierarchy. Yearly notes folders contain monthly notes, and monthly notes folders contain daily and weekly notes.
 Uses a hierarchical **folder notes** structure to organize periodic notes:
 
 ```
@@ -22,9 +22,11 @@ Uses a hierarchical **folder notes** structure to organize periodic notes:
 ### Commands
 1. Open daily note
     - Automatically creates the monthly and yearly note also, if none exists.
-2. Open monthly note
+2. Open weekly note
+    - User enters the week number to create
+3. Open monthly note
     - User enters the month to create
-3. Open yearly note
+4. Open yearly note
     - User enters the year to create
 
 
