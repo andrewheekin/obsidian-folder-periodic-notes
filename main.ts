@@ -45,6 +45,24 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 			callback: () => this.createOrOpenPeriodicNote(PeriodType.Yearly),
 		});
 
+		this.addCommand({
+			id: "open-yesterday",
+			name: "Yesterday",
+			callback: () => this.createOrOpenYesterdaysDailyNote(),
+		});
+
+		this.addCommand({
+			id: "open-tomorrow",
+			name: "Tomorrow",
+			callback: () => this.createOrOpenTomorrowsDailyNote(),
+		});
+
+		this.addCommand({
+			id: "open-last-5-days-notes",
+			name: "Last 5 days",
+			callback: () => this.createOrOpenLast5DaysNotes(),
+		});
+
 		this.addSettingTab(new FolderPeriodicNotesSettingTab(this.app, this));
 	}
 
@@ -181,6 +199,50 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 		if (!existingDayFile) {
 			// Second parameter is the content of the note
 			await this.app.vault.create(dayFilePath, "");
+		}
+	}
+
+	async createOrOpenYesterdaysDailyNote() {
+		const date = moment().subtract(1, "days");
+		const year = date.format("YYYY");
+		const month = date.format("YYYY-MM");
+		const day = date.format("YYYY-MM-DD");
+
+		let noteFolderPath = this.settings.noteFolder;
+
+		await this.createYearFolderNote(year);
+		await this.createMonthFolderNote(year, month);
+		await this.createDayNote(year, month, day);
+		return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${day}.md`, "", true);
+	}
+
+	async createOrOpenTomorrowsDailyNote() {
+		const date = moment().add(1, "days");
+		const year = date.format("YYYY");
+		const month = date.format("YYYY-MM");
+		const day = date.format("YYYY-MM-DD");
+
+		let noteFolderPath = this.settings.noteFolder;
+
+		await this.createYearFolderNote(year);
+		await this.createMonthFolderNote(year, month);
+		await this.createDayNote(year, month, day);
+		return this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${day}.md`, "", true);
+	}
+
+	async createOrOpenLast5DaysNotes() {
+		const noteFolderPath = this.settings.noteFolder;
+
+		for (let i = 0; i < 5; i++) {
+			const date = moment().subtract(i, "days");
+			const year = date.format("YYYY");
+			const month = date.format("YYYY-MM");
+			const day = date.format("YYYY-MM-DD");
+
+			await this.createYearFolderNote(year);
+			await this.createMonthFolderNote(year, month);
+			await this.createDayNote(year, month, day);
+			await this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${day}.md`, "", true);
 		}
 	}
 }
