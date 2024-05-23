@@ -233,7 +233,7 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 	async createOrOpenLast5DaysNotes() {
 		const noteFolderPath = this.settings.noteFolder;
 
-		for (let i = 0; i < 5; i++) {
+		for (let i = 4; i >= 0; i--) {
 			const date = moment().subtract(i, "days");
 			const year = date.format("YYYY");
 			const month = date.format("YYYY-MM");
