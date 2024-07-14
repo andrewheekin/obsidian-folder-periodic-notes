@@ -63,6 +63,12 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 			callback: () => this.createOrOpenLast5DaysNotes(),
 		});
 
+		this.addCommand({
+			id: "generate-all-daily-notes-for-current-year",
+			name: "Generate all daily notes for current calendar year",
+			callback: () => this.generateAllDailyNotesForCurrentYear(),
+		});
+
 		this.addSettingTab(new FolderPeriodicNotesSettingTab(this.app, this));
 	}
 
@@ -243,6 +249,22 @@ export default class FolderPeriodicNotesPlugin extends Plugin {
 			await this.createMonthFolderNote(year, month);
 			await this.createDayNote(year, month, day);
 			await this.app.workspace.openLinkText(`${noteFolderPath}/${year}/${month}/${day}.md`, "", true);
+		}
+	}
+
+	async generateAllDailyNotesForCurrentYear() {
+		const noteFolderPath = this.settings.noteFolder;
+		const today = moment();
+		const endOfYear = moment().endOf("year");
+
+		for (let date = today.clone(); date.isBefore(endOfYear); date.add(1, "days")) {
+			const year = date.format("YYYY");
+			const month = date.format("YYYY-MM");
+			const day = date.format("YYYY-MM-DD");
+
+			await this.createYearFolderNote(year);
+			await this.createMonthFolderNote(year, month);
+			await this.createDayNote(year, month, day);
 		}
 	}
 }
